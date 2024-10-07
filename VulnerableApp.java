@@ -9,12 +9,16 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @RestController
 public class VulnerableApp {
 
     @Value("${DB_PASSWORD}")
     private String dbPassword; // Exposición de secreto
+
+    private static final Logger logger = Logger.getLogger(VulnerableApp.class.getName());
 
     @GetMapping("/greet")
     public String greet(@RequestParam(value = "name", defaultValue = "World") String name) {
@@ -37,8 +41,26 @@ public class VulnerableApp {
             stmt.close();
             connection.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Database error", e);
         }
         return userInfo.isEmpty() ? "User not found" : userInfo;
+    }
+
+    @GetMapping("/sensitiveData")
+    public String sensitiveData() {
+        String sensitiveInfo = "Top secret information: 12345"; // Información sensible expuesta
+        return sensitiveInfo;
+    }
+
+    @GetMapping("/calculate")
+    public int calculate(@RequestParam(value = "number") String number) {
+        // Vulnerabilidad de ejecución de código: evalúa el input sin validación
+        return Integer.parseInt(number) * 10; // Puede lanzar NumberFormatException
+    }
+
+    @GetMapping("/admin")
+    public String admin() {
+        // No se requiere autenticación: vulnerabilidad de control de acceso
+        return "Admin Panel: All sensitive actions can be performed here.";
     }
 }
